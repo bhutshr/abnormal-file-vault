@@ -15,6 +15,9 @@ class File(models.Model):
     file_type = models.CharField(max_length=100)
     size = models.BigIntegerField()
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    sha256 = models.CharField(max_length=64, null=True, blank=True)
+    is_duplicate = models.BooleanField(default=False)
+    original_file = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='duplicates')
     
     class Meta:
         ordering = ['-uploaded_at']

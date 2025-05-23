@@ -7,20 +7,29 @@ interface FileUploadProps {
   onUploadSuccess: () => void;
 }
 
+import { File as FileType } from '../types/file'; // Ensure FileType is imported
+
 export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null); // For success/duplicate messages
   const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
     mutationFn: fileService.uploadFile,
-    onSuccess: () => {
-      // Invalidate and refetch files query
+    onSuccess: (data: FileType) => { // data is the response from the backend
       queryClient.invalidateQueries({ queryKey: ['files'] });
       setSelectedFile(null);
-      onUploadSuccess();
+      setError(null); // Clear previous errors
+      if (data.is_duplicate) {
+        setUploadMessage(`Duplicate detected. This file references an existing file of ${data.size} bytes.`);
+      } else {
+        setUploadMessage('File uploaded successfully!');
+      }
+      onUploadSuccess(); // Call the original callback
     },
     onError: (error) => {
+      setUploadMessage(null); // Clear previous success messages
       setError('Failed to upload file. Please try again.');
       console.error('Upload error:', error);
     },
@@ -30,12 +39,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
       setError(null);
+      setUploadMessage(null); // Clear message when new file is selected
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
       setError('Please select a file');
+      setUploadMessage(null);
       return;
     }
 
@@ -79,6 +90,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
         {selectedFile && (
           <div className="text-sm text-gray-600">
             Selected: {selectedFile.name}
+          </div>
+        )}
+        {uploadMessage && (
+          <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+            {uploadMessage}
           </div>
         )}
         {error && (

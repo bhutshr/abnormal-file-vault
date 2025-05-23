@@ -46,4 +46,26 @@ export const fileService = {
       throw new Error('Failed to download file');
     }
   },
-}; 
+
+  async searchFiles(params: SearchParams): Promise<FileType[]> {
+    // Filter out undefined or empty string params to avoid sending them
+    const filteredParams = Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
+    const response = await axios.get(`${API_URL}/files/search/`, { params: filteredParams });
+    return response.data;
+  },
+};
+
+export interface SearchParams {
+  filename?: string;
+  file_type?: string;
+  size_min?: number;
+  size_max?: number;
+  date_from?: string; // YYYY-MM-DD
+  date_to?: string;   // YYYY-MM-DD
+}
