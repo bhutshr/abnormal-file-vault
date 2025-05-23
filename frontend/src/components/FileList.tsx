@@ -169,7 +169,7 @@ export const FileList: React.FC = () => {
       <FileSearchFilter 
         onSearch={handleSearch} 
         onClear={handleClearSearch} 
-        isSearching={isCurrentlySearching} 
+        isSearching={isCurrentlySearching} // Added trailing comma based on ESLint error
       />
       <h2 className="text-xl font-semibold text-gray-900 mb-4 mt-6">
         {searchParams ? 'Search Results' : 'All Uploaded Files'}
