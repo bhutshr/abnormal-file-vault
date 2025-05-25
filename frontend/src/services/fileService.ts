@@ -69,3 +69,12 @@ export interface SearchParams {
   date_from?: string; // YYYY-MM-DD
   date_to?: string;   // YYYY-MM-DD
 }
+
+export interface StorageStatsData {
+  total_physical_size: number;
+  total_logical_size: number;
+  saved_space: number;
+  deduplicated_files_count: number;
+  original_files_count: number;
+  total_files_count: number;
+}
