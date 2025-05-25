@@ -3,22 +3,16 @@ import { fileService, SearchParams } from '../services/fileService';
 import { File as FileType } from '../types/file';
 import { DocumentIcon, TrashIcon, ArrowDownTrayIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileSearchFilter } from './FileSearchFilter'; // Import the new component
+import { FileSearchFilter } from './FileSearchFilter';
 
 export const FileList: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null);
 
-  // Query for fetching files - now dynamic based on searchParams
   const { data: files, isLoading, error, isFetching } = useQuery<FileType[], Error>({
-    queryKey: ['files', searchParams], // Query key includes searchParams
-    queryFn: () => {
-      if (searchParams) {
-        return fileService.searchFiles(searchParams);
-      }
-      return fileService.getFiles();
-    },
-    refetchOnWindowFocus: false, // Optional: disable refetch on window focus if not desired
+    queryKey: ['files', searchParams],
+    queryFn: () => (searchParams ? fileService.searchFiles(searchParams) : fileService.getFiles()),
+    refetchOnWindowFocus: false,
   });
 
   const deleteMutation = useMutation({
@@ -28,7 +22,6 @@ export const FileList: React.FC = () => {
     },
   });
 
-  // Mutation for downloading files
   const downloadMutation = useMutation({
     mutationFn: ({ fileUrl, filename }: { fileUrl: string; filename: string }) =>
       fileService.downloadFile(fileUrl, filename),
@@ -58,9 +51,7 @@ export const FileList: React.FC = () => {
     setSearchParams(null);
   };
 
-  // Determine if currently searching (used to disable buttons etc.)
   const isCurrentlySearching = isLoading || isFetching;
-
 
   const renderContent = () => {
     if (isLoading) {
@@ -77,9 +68,7 @@ export const FileList: React.FC = () => {
       return (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mt-4">
           <div className="flex">
-            <div className="flex-shrink-0">
-              {/* Error Icon */}
-            </div>
+            <div className="flex-shrink-0">{/* Error Icon */}</div>
             <div className="ml-3">
               <p className="text-sm text-red-700">
                 Failed to load files: {error.message || 'Please try again.'}
@@ -97,17 +86,13 @@ export const FileList: React.FC = () => {
             <>
               <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No files found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your search or filter criteria.
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
             </>
           ) : (
             <>
               <DocumentIcon className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No files uploaded yet</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Get started by uploading a file.
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Get started by uploading a file.</p>
             </>
           )}
         </div>
@@ -166,10 +151,10 @@ export const FileList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <FileSearchFilter 
-        onSearch={handleSearch} 
-        onClear={handleClearSearch} 
-        isSearching={isCurrentlySearching} 
+      <FileSearchFilter
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+        isSearching={isCurrentlySearching}
       />
       <h2 className="text-xl font-semibold text-gray-900 mb-4 mt-6">
         {searchParams ? 'Search Results' : 'All Uploaded Files'}
@@ -178,27 +163,3 @@ export const FileList: React.FC = () => {
     </div>
   );
 };
-                      disabled={downloadMutation.isPending}
-                      className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                    >
-                      <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
-                      Download
-                    </button>
-                    <button
-                      onClick={() => handleDelete(file.id)}
-                      disabled={deleteMutation.isPending}
-                      className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      <TrashIcon className="h-4 w-4 mr-1" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}; 
