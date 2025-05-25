@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from .models import File
 from .serializers import FileSerializer
 import hashlib
-from django.db.models import Q
-from datetime import datetime
+from django.db.models import Q, Sum, Count
+from datetime import datetime, timedelta, time
+from django.utils import timezone # Added for timezone awareness
 
 # Create your views here.
 
@@ -52,12 +53,14 @@ class FileViewSet(viewsets.ModelViewSet):
 
         if date_to_str:
             try:
-                date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
-                # To include the whole day, filter up to the end of that day if it's a date without time
-                # If uploaded_at is a DateTimeField, this approach is fine.
-                # For more precision (e.g., end of day), one might use uploaded_at__lte=datetime.combine(date_to, datetime.max.time())
-                # but for simplicity, __lte with date should work for most cases if time component is not critical.
-                queryset = queryset.filter(uploaded_at__lte=date_to)
+                parsed_date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+                # Create a timezone-aware datetime for the end of the day
+                # This represents the start of the *next* day, so use __lt
+                end_of_day_to_filter = timezone.make_aware(
+                    datetime.combine(parsed_date_to + timedelta(days=1), time.min),
+                    timezone.get_default_timezone()
+                )
+                queryset = queryset.filter(uploaded_at__lt=end_of_day_to_filter)
             except ValueError:
                 return Response({'error': 'Invalid date_to format (YYYY-MM-DD)'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -113,3 +116,21 @@ class FileViewSet(viewsets.ModelViewSet):
             self.perform_create(serializer) # This will save file_obj to a new path
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        total_physical_size = File.objects.filter(is_duplicate=False).aggregate(Sum('size'))['size__sum'] or 0
+        total_logical_size = File.objects.aggregate(Sum('size'))['size__sum'] or 0
+        deduplicated_files_count = File.objects.filter(is_duplicate=True).count()
+        original_files_count = File.objects.filter(is_duplicate=False).count()
+        total_files_count = File.objects.count()
+
+        stats_data = {
+            'total_physical_size': total_physical_size,
+            'total_logical_size': total_logical_size,
+            'saved_space': total_logical_size - total_physical_size,
+            'deduplicated_files_count': deduplicated_files_count,
+            'original_files_count': original_files_count,
+            'total_files_count': total_files_count,
+        }
+        return Response(stats_data)
