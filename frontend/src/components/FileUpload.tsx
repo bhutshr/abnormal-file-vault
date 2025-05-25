@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { fileService } from '../services/fileService';
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { File as FileType } from '../types/file'; 
 
 interface FileUploadProps {
   onUploadSuccess: () => void;
 }
-
-import { File as FileType } from '../types/file'; // Ensure FileType is imported
+// Ensure FileType is imported
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
